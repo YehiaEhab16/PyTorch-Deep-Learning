@@ -1,2 +1,2 @@
-# PyTorch-Deep-Learning-
+# PyTorch-Deep-Learning
 Using PyTorch to train and evaluate CNN models
