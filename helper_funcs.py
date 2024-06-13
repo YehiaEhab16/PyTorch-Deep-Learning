@@ -253,4 +253,22 @@ def move_and_rename_images(root_dir, target_dir, max_files=5):
   else:
     print(f"Successfully moved {count} images.")
 
-    
+# Rename Folders
+def rename_folders_by_class_name(root_dir):
+    for filename in os.listdir(root_dir):
+        # Split the folder name at the hyphen
+        parts = filename.split("-")
+
+        if len(parts) == 2:  # Check if there's a hyphen and a class name
+            class_name = parts[1].replace("_", " ").title()  # Convert to title case with spaces replacing underscores
+            new_name = class_name
+            # Construct the old and new folder paths
+            old_path = os.path.join(root_dir, filename)
+            new_path = os.path.join(root_dir, new_name)
+
+            # Rename the folder
+            try:
+                os.rename(old_path, new_path)
+                print(f"Renamed: {old_path} -> {new_path}")
+            except OSError as e:
+                print(f"Error renaming {old_path}: {e}")
