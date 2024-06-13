@@ -1,18 +1,22 @@
+import os
+import glob
+import shutil
 import torch
 import random
 import torchvision
-from torch import nn
 from PIL import Image
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 
 # Plot Transformed Images
 def plot_transformed_images(image_paths, transform, n=3):
+    # Create image list
+    image_list = [f for f in glob.iglob(f"{image_paths}/*/*.jpg", recursive=True)] 
     # Select Random Images
-    random_image_paths = random.sample(image_paths, k=n)
+    random_image_paths = random.sample(image_list, k=n)
     for image_path in random_image_paths:
         with Image.open(image_path) as f:
-            fig, ax = plt.subplots(1, 2,figsize=(5,3.5))
+            fig, ax = plt.subplots(1, 2,figsize=(5.5,4))
             # Plot original image
             ax[0].imshow(f) 
             ax[0].set_title(f"Original \nSize: {f.size}")
@@ -25,7 +29,7 @@ def plot_transformed_images(image_paths, transform, n=3):
             ax[1].axis("off")
 
             # Plot title
-            fig.suptitle(f"Class: {image_path.parent.stem}", fontsize=12)
+            fig.suptitle(f"Class: {os.path.basename(image_path).split('_')[0]}", fontsize=12)
 
 # Training Step
 def train_step(model: torch.nn.Module, dataloader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module, optimizer: torch.optim.Optimizer, device: torch.device):
@@ -171,4 +175,82 @@ def pred_and_plot_image(model: torch.nn.Module, image_path: str, class_names: li
         title = f"Pred: {target_image_pred_label} | Prob: {target_image_pred_probs.max().cpu():.3f}"
     plt.title(title)
     plt.axis(False)
+    plt.show()
+
+# Predict images
+def pred_and_plot_images(model: torch.nn.Module, image_dir: str, class_names: list[str], 
+                         device: torch.device, transform=None, num_images=3):
+
+    # Get all image paths in the directory
+    image_paths = [f for f in glob.iglob(f"{image_dir}/*.jpg", recursive=True)] 
+    
+    # Randomly sample image paths
+    if len(image_paths) < num_images:
+        print(f"Warning: Directory contains less than {num_images} images. Using {len(image_paths)} images.")
+        num_images = len(image_paths)
+    sampled_image_paths = random.sample(image_paths, num_images)
+
+    # Loop through sampled images and predict/plot
+    for image_path in sampled_image_paths:
+        print(f"Predicting for image: {image_path}")
+        pred_and_plot_image(model, image_path, class_names, device, transform)
+
+# Check for images 
+def is_image(filename):
+  extensions = (".jpg", ".jpeg", ".png", ".bmp", ".gif")
+  return any(filename.lower().endswith(ext) for ext in extensions)
+
+# Delete Unwanted Images
+def delete_images(root_dir, max_files=115):
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        print('Das ist ',dirpath)
+        count = 0
+        for filename in glob.iglob(os.path.join(dirpath, "*")):
+            if is_image(filename) and count < max_files:
+                os.remove(filename)
+                count += 1
+                print(f"Deleted {filename}")
+
+    if count == 0:
+        print("No images found for deletion.")
+    else:
+        print(f"Successfully deleted {count} images.")
+
+# Skip some images then delete the rest
+def delete_images_after_skip(root_dir, max_files_to_skip=115):
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        count = 0
+        skipped = 0  # Track the number of skipped images
+        for filename in glob.iglob(os.path.join(dirpath, "*")):
+            if is_image(filename):
+                if skipped < max_files_to_skip:
+                    skipped += 1
+                    continue  # Skip the first max_files_to_skip images
+                os.remove(filename)
+                count += 1
+                print(f"Deleted {filename}")
+
+    if count == 0:
+        print("No images found for deletion after skipping the first", max_files_to_skip)
+    else:
+        print(f"Successfully deleted {count} images (after skipping the first {max_files_to_skip}).")
+
+# Move Images
+def move_and_rename_images(root_dir, target_dir, max_files=5):
+  for dirpath, dirnames, filenames in os.walk(root_dir):
+    subdir_name = os.path.basename(dirpath)  # Get subdirectory name
+    count = 0  # Track total moved images
+    for filename in glob.iglob(os.path.join(dirpath, "*")):
+      if is_image(filename) and count < max_files:
+        new_filename = f"{subdir_name}_{count}{os.path.splitext(filename)[1]}"
+        target_path = os.path.join(target_dir, new_filename)
+        shutil.move(filename, target_path)  # Move the file
+        count += 1
+        print(f"Moved {filename} to {target_path}")
+
+  if count == 0:
+    print("No images found for moving.")
+  else:
+    print(f"Successfully moved {count} images.")
+
     
