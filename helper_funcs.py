@@ -29,7 +29,7 @@ def plot_transformed_images(image_paths, transform, n=3):
             ax[1].axis("off")
 
             # Plot title
-            fig.suptitle(f"Class: {os.path.basename(image_path).split('_')[0]}", fontsize=12)
+            fig.suptitle(f"Class: {os.path.basename(image_path)}", fontsize=12)
 
 # Training Step
 def train_step(model: torch.nn.Module, dataloader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module, optimizer: torch.optim.Optimizer, device: torch.device):
@@ -276,3 +276,27 @@ def count_images_in_subdirectories(root_dir):
 
     # Print the image count for the subdirectory
     print(f'Found {image_count} images in {dirpath}')
+
+def shuffle_images(root_dir):
+  for dirpath, _, files in os.walk(root_dir):
+    if not files:
+      continue  # Skip empty directories
+    
+    # Shuffle the list of image files
+    image_files = [f for f in files if os.path.isfile(os.path.join(dirpath, f)) and is_image(f)]
+    random.shuffle(image_files)
+    
+    count = 1
+    for filename in image_files:
+        # Construct new filename with count number
+        new_filename = f"img{count}.{filename.split('.')[-1]}"
+        source = os.path.join(dirpath, filename)
+        destination = os.path.join(dirpath, new_filename)
+      
+        # Rename the folder
+        try:
+            os.rename(source, destination)
+            print(f"Renamed: {source} -> {destination}")
+            count+=1
+        except OSError as e:
+            print(f"Error renaming {source}: {e}")
