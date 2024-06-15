@@ -201,8 +201,8 @@ def is_image(filename):
   return any(filename.lower().endswith(ext) for ext in extensions)
 
 # Delete Unwanted Images
-def delete_images(root_dir, max_files=115):
-    for dirpath, dirnames, filenames in os.walk(root_dir):
+def delete_images(root_dir, max_files):
+    for dirpath, _, _ in os.walk(root_dir):
         print('Das ist ',dirpath)
         count = 0
         for filename in glob.iglob(os.path.join(dirpath, "*")):
@@ -217,8 +217,8 @@ def delete_images(root_dir, max_files=115):
         print(f"Successfully deleted {count} images.")
 
 # Skip some images then delete the rest
-def delete_images_after_skip(root_dir, max_files_to_skip=115):
-    for dirpath, dirnames, filenames in os.walk(root_dir):
+def delete_images_after_skip(root_dir, max_files_to_skip):
+    for dirpath, _, _ in os.walk(root_dir):
         count = 0
         skipped = 0  # Track the number of skipped images
         for filename in glob.iglob(os.path.join(dirpath, "*")):
@@ -236,8 +236,8 @@ def delete_images_after_skip(root_dir, max_files_to_skip=115):
         print(f"Successfully deleted {count} images (after skipping the first {max_files_to_skip}).")
 
 # Move Images
-def move_and_rename_images(root_dir, target_dir, max_files=5):
-  for dirpath, dirnames, filenames in os.walk(root_dir):
+def move_and_rename_images(root_dir, target_dir, max_files):
+  for dirpath, _, _ in os.walk(root_dir):
     subdir_name = os.path.basename(dirpath)  # Get subdirectory name
     count = 0  # Track total moved images
     for filename in glob.iglob(os.path.join(dirpath, "*")):
@@ -254,21 +254,25 @@ def move_and_rename_images(root_dir, target_dir, max_files=5):
     print(f"Successfully moved {count} images.")
 
 # Rename Folders
-def rename_folders_by_class_name(root_dir):
+def rename_folders(root_dir,suffix):
     for filename in os.listdir(root_dir):
-        # Split the folder name at the hyphen
-        parts = filename.split("-")
+        old_path = os.path.join(root_dir, filename)
+        new_path = os.path.join(root_dir, suffix + filename)
 
-        if len(parts) == 2:  # Check if there's a hyphen and a class name
-            class_name = parts[1].replace("_", " ").title()  # Convert to title case with spaces replacing underscores
-            new_name = class_name
-            # Construct the old and new folder paths
-            old_path = os.path.join(root_dir, filename)
-            new_path = os.path.join(root_dir, new_name)
+        # Rename the folder
+        try:
+            os.rename(old_path, new_path)
+            print(f"Renamed: {old_path} -> {new_path}")
+        except OSError as e:
+            print(f"Error renaming {old_path}: {e}")
 
-            # Rename the folder
-            try:
-                os.rename(old_path, new_path)
-                print(f"Renamed: {old_path} -> {new_path}")
-            except OSError as e:
-                print(f"Error renaming {old_path}: {e}")
+def count_images_in_subdirectories(root_dir):
+  for dirpath, _, _ in os.walk(root_dir):
+    # Count images with specified extensions
+    image_count = 0
+    for filename in glob.iglob(os.path.join(dirpath, "*")):
+      if is_image(filename):
+        image_count += 1
+
+    # Print the image count for the subdirectory
+    print(f'Found {image_count} images in {dirpath}')
